@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__brave-search__brave_web_search",
+      "mcp__fetch__imageFetch",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
