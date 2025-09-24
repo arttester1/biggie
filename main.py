@@ -912,7 +912,7 @@ async def handle_group_start_command(update: Update, context: ContextTypes.DEFAU
     else:
         await update.message.reply_text(
             "I'm Biggie The American Bully (Top Dog Check), The Top Dog verifier. I verify token balances and manage access to your group.\n"
-            "Use /help to see available commands."
+            "Use /help to see available commands, or if you are ready to gate this group, use /setup."
         )
 
 async def handle_verification_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
