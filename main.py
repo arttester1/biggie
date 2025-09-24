@@ -1456,6 +1456,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /test_verify - Run verification immediately (testing)
 /testbalance <wallet_address> <token_address> [chain_id] - Test token balance across APIs
 /dump - dump the config/user data straight into your Telegram DM
+/admin blocked - List all blocked groups
+/admin rejections - Show all groups with rejections
+/admin strikes <group_id> - Show rejection count for a specific group
+/admin unblock <group_id> - Reset rejection count and unblock a group
 /help - Show this help menu
 """)
     else:
