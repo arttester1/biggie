@@ -1810,7 +1810,13 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND, handle_dm_message))
     
     # Handle new members and setup responses
-    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_member))
+    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_member)) 
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & (filters.ChatType.GROUPS | filters.ChatType.SUPERGROUP) & ~filters.COMMAND,
+            handle_setup_response
+        )
+    )
     
     # ADD ERROR HANDLER HERE
     app.add_error_handler(error_handler)
