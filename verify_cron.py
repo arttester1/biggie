@@ -33,6 +33,7 @@ async def verify_all_members(bot: Bot, group_id: str, group_config: Dict[str, An
     """Verify all existing group members against token requirements."""
     try:
         logger.info(f"🔄 Starting periodic verification for group {group_id}")
+        logger.info(f"📊 Using config: min_balance={group_config.get('min_balance')}, token={group_config.get('token')}")
 
         user_data = load_json_file(USER_DATA_PATH)
         group_users = user_data.get(group_id, {})
@@ -82,6 +83,7 @@ async def verify_all_members(bot: Bot, group_id: str, group_config: Dict[str, An
 
 async def periodic_verification():
     """Periodically verify all members in configured groups."""
+    # ALWAYS reload fresh config from database/file
     config = load_json_file(CONFIG_PATH)
 
     if not config:
@@ -90,12 +92,19 @@ async def periodic_verification():
 
     logger.info(f"🔄 Starting periodic verification cycle for {len(config)} groups")
 
+    # Log the actual config values being used
+    for gid, gconf in config.items():
+        logger.info(f"📋 Group {gid} config: token={gconf.get('token')}, min_balance={gconf.get('min_balance')}")
+
     # Create bot instance
     bot = Bot(token=TOKEN)
 
     for group_id, group_config in config.items():
         logger.info(f"Verifying members in group {group_id}")
-        await verify_all_members(bot, group_id, group_config)
+        # Reload config for each group to ensure fresh data
+        fresh_config = load_json_file(CONFIG_PATH)
+        fresh_group_config = fresh_config.get(group_id, group_config)
+        await verify_all_members(bot, group_id, fresh_group_config)
 
     logger.info("✅ Periodic verification cycle completed")
 
