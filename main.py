@@ -650,7 +650,7 @@ async def handle_admin_commands(update: Update, context: ContextTypes.DEFAULT_TY
             if admin_id:
                 try:
                     await context.bot.send_message(
-                        chat_id=admin_id,
+                        chat_id=group_id,
                         text="✅ **GROUP APPROVED!** ✅\n\n"
                              f"Congratulations! Your group '{group_name}' has been approved for the whitelist.\n\n"
                              "**Next Steps:**\n"
@@ -691,7 +691,7 @@ async def handle_admin_commands(update: Update, context: ContextTypes.DEFAULT_TY
             try:
                 if is_blocked:
                     await context.bot.send_message(
-                        chat_id=admin_id,
+                        chat_id=group_id,
                         text="🚫 **GROUP PERMANENTLY BLOCKED** 🚫\n\n"
                              f"Your group '{group_name}' has been rejected for the 3rd time and is now permanently blocked.\n\n"
                              "**What this means:**\n"
@@ -703,7 +703,7 @@ async def handle_admin_commands(update: Update, context: ContextTypes.DEFAULT_TY
                     )
                 else:
                     await context.bot.send_message(
-                        chat_id=admin_id,
+                        chat_id=group_id,
                         text="❌ **Whitelist Request Rejected** ❌\n\n"
                              f"Your group '{group_name}' has been rejected.\n\n"
                              f"**Strike Count:** {rejection_count}/3\n\n"
