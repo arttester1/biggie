@@ -69,10 +69,14 @@ def load_json_from_db(table_name):
 
         if result:
             # FIX: Handle both string and dict returns from PostgreSQL
-            if isinstance(result[0], dict):
-                return result[0]  # Already parsed by PostgreSQL
+            data = result[0]
+            if isinstance(data, dict):
+                return data  # Already parsed by PostgreSQL JSONB
+            elif isinstance(data, str):
+                return json.loads(data)  # Parse JSON string
             else:
-                return json.loads(result[0])  # Parse string
+                # Handle other types (bytes, etc.)
+                return json.loads(str(data))
         return {}
 
     except Exception as e:
@@ -105,6 +109,7 @@ def save_json_to_db(table_name, data):
 
         # Upsert operation (compatible syntax)
         if db_type == "postgres":
+            # FIX: Pass data as dict, not JSON string for JSONB
             cursor.execute("""
                 INSERT INTO json_storage (table_name, json_data)
                 VALUES (%s, %s)
@@ -112,7 +117,7 @@ def save_json_to_db(table_name, data):
                 DO UPDATE SET
                     json_data = EXCLUDED.json_data,
                     updated_at = NOW()
-            """, (table_name, json.dumps(data)))
+            """, (table_name, json.dumps(data)))  # Still use json.dumps for consistency
         else:  # sqlite
             cursor.execute("""
                 INSERT INTO json_storage (table_name, json_data)
