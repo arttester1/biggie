@@ -38,6 +38,26 @@ def load_json_from_db(table_name):
         conn, db_type = get_db_connection()
         cursor = conn.cursor()
 
+        # Create table if not exists first (CRITICAL FIX)
+        if db_type == "postgres":
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS json_storage (
+                    table_name VARCHAR(50) PRIMARY KEY,
+                    json_data JSONB NOT NULL,
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+            conn.commit()
+        else:  # sqlite
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS json_storage (
+                    table_name TEXT PRIMARY KEY,
+                    json_data TEXT NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+
         # Simple key-value storage für JSON files
         if db_type == "postgres":
             cursor.execute("SELECT json_data FROM json_storage WHERE table_name = %s", (table_name,))
@@ -48,7 +68,11 @@ def load_json_from_db(table_name):
         conn.close()
 
         if result:
-            return json.loads(result[0])
+            # FIX: Handle both string and dict returns from PostgreSQL
+            if isinstance(result[0], dict):
+                return result[0]  # Already parsed by PostgreSQL
+            else:
+                return json.loads(result[0])  # Parse string
         return {}
 
     except Exception as e:
