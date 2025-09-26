@@ -289,7 +289,7 @@ async def check_token_transfer_moralis(verifier_address, user_address, token_add
             if (
                 to_addr == verifier_address.lower()
                 and token_addr == token_address.lower()
-                and abs(actual_amount - 1.0) < 0.0001
+                and abs(actual_amount - 1.0) <= (1 / (10 ** decimals))
             ):
                 logger.info("✅ Match found: transfer to verifier with correct amount and token")
                 return True
