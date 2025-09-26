@@ -1175,6 +1175,23 @@ async def handle_dm_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             session["address"] = message_text
             session["step"] = "checking_balance"
             
+            # NEW: one-wallet-per-user per group (prevent reuse by someone else)
+            user_data = load_json_file(USER_DATA_PATH)
+            group_users = user_data.get(session["group_id"], {})
+            for uid, rec in group_users.items():
+                if (
+                    rec.get("address", "").lower() == message_text.lower()
+                    and uid != str(user_id)
+                    and rec.get("verified", False) is True
+                ):
+                    await update.message.reply_text(
+                        "❌ This wallet is already linked to another verified member of this group. "
+                        "Use a different wallet or ask the admin to reset them."
+                    )
+                    # End session safely without touching the database
+                    del verification_sessions[(user_id, session["group_id"])]
+                    return            
+            
             # Verify balance first
             verifying_msg = await update.message.reply_text("🔍 Checking your token balance...")
             
@@ -1243,13 +1260,26 @@ async def handle_dm_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if session["group_id"] not in user_data:
                 user_data[session["group_id"]] = {}
 
+            # NEW: race-safe duplicate check just before write
+            for uid, rec in user_data.get(session["group_id"], {}).items():
+                if (
+                    rec.get("address", "").lower() == session["address"].lower()
+                    and uid != str(user_id)
+                    and rec.get("verified", False) is True
+                ):
+                    await verifying_msg.edit_text(
+                        "❌ This wallet is already linked to another verified member of this group. "
+                        "Use a different wallet or ask the admin to reset them."
+                    )
+                    del verification_sessions[(user_id, session["group_id"])]
+                    return
+
             user_data[session["group_id"]][str(user_id)] = {
                 "address": session["address"],
                 "verified": True,
                 "last_verified": int(time.time()),
                 "verification_tx": True
             }
-
             save_json_file(USER_DATA_PATH, user_data)
 
             # Create invite link for the group
