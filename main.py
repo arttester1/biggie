@@ -538,7 +538,7 @@ async def handle_whitelist_approval(update: Update, context: ContextTypes.DEFAUL
                     chat_id=group_id,
                     text=(
                         "✅ **GROUP APPROVED!** ✅\n\n"
-                        f"Congratulations! Your group '{group_name}' has been approved for the whitelist.\n\n"
+                        f"Congratulations! Your group '{group_name}' has been approved.\n\n"
                         "**Next Steps:**\n"
                         "1. Use `/setup` in your group to configure token requirements\n"
                         "2. Set the bot as an admin with permission to add/remove members\n"
