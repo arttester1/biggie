@@ -359,7 +359,7 @@ async def start_setup_flow(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "🔄 *Whitelist Request Sent* 🔄\n\n"
             "Your group has been added to the whitelist queue.\n\n"
-            "Contact @rain5966 with your request and send 0.1 ETH to 0x0000000137cd3F00dd6304B7af378fD2EEf73d37.\n"
+            "Contact @rain5966 with your request and send 0.1 ETH to 0x00000000B8f2Fa0BCfB6d540669BA4FB6CF76611.\n"
             "You'll receive a notification when your group is approved.",
             parse_mode="Markdown"
         )
@@ -1578,7 +1578,7 @@ async def guide_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 *1. GET WHITELISTED (First Time Only)*
 • Use `/setup` in your group
 • DM @rain5966 with your request
-• Send a one time fee of 0.1 ETH to: `0x0000000137cd3F00dd6304B7af378fD2EEf73d37`
+• Send a one time fee of 0.1 ETH to: `0x00000000B8f2Fa0BCfB6d540669BA4FB6CF76611`
 • Wait for approval notification
 
 *2. SETUP YOUR GROUP*
@@ -1695,7 +1695,7 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "⏳ Your group is pending whitelist approval.\n\n"
                 "You've been added to the queue. DM @rain5966 and send 0.1 ETH to "
-                "0x0000000137cd3F00dd6304B7af378fD2EEf73d37.\n"
+                "0x00000000B8f2Fa0BCfB6d540669BA4FB6CF76611.\n"
                 "You'll receive a notification when your group is approved."
             )
             return
