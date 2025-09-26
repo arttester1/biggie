@@ -838,15 +838,7 @@ async def handle_dm_start_command(update: Update, context: ContextTypes.DEFAULT_
         return
     
     user_id = update.message.from_user.id
-    
-    # Check if user is the owner - bypass verification
-    if is_owner(user_id):
-        await update.message.reply_text(
-            "👑 Hello Owner! You are permanently whitelisted in all groups. "
-            "You don't need to verify token balances."
-        )
-        return
-    
+
     if context.args:
         # This is a verification link
         token = context.args[0]
@@ -855,14 +847,50 @@ async def handle_dm_start_command(update: Update, context: ContextTypes.DEFAULT_
         if not group_id:
             await update.message.reply_text("❌ Invalid verification link. Please contact the group admin for a valid link.")
             return
+
+        # 🔑 Owner bypass with group invite
+        if is_owner(user_id):
+            try:
+                chat = await context.bot.get_chat(group_id)
+                invite_link = await chat.create_invite_link(
+                    name=f"Owner access {user_id}",
+                    member_limit=1,
+                    creates_join_request=False,
+                    expire_date=datetime.utcnow() + timedelta(minutes=10)
+                )
+                await update.message.reply_text(
+                    f"👑 Owner detected!\n\n"
+                    f"Here’s your invite link to **{chat.title}**:\n"
+                    f"[Join Here]({invite_link.invite_link})",
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                logger.error(f"Error creating invite link for owner: {e}")
+                await update.message.reply_text(
+                    "👑 Owner detected! You are permanently whitelisted.\n\n"
+                    "I couldn’t generate an invite link, please contact the group admin."
+                )
+            return
+
+        # 🔍 New logic: Check if user already verified in this group
+        user_data = load_json_file(USER_DATA_PATH)
+        if (
+            group_id in user_data
+            and str(user_id) in user_data[group_id]
+            and user_data[group_id][str(user_id)].get("verified", False)
+        ):
+            await update.message.reply_text(
+                f"✅ You are already verified for group `{group_id}`.\n"
+                "No need to verify again unless the group admin resets your access."
+            )
+            return
         
-        # Store verification session - FIXED: Use tuple key with group_id
+        # Store verification session
         verification_sessions[(user_id, group_id)] = {
             "group_id": group_id,
             "step": "awaiting_address"
         }
         
-        # Create keyboard with instructions
         keyboard = [
             [InlineKeyboardButton("📝 Enter Wallet Address", callback_data="enter_address")],
             [InlineKeyboardButton("❌ Cancel", callback_data="cancel_verification")]
@@ -878,20 +906,26 @@ async def handle_dm_start_command(update: Update, context: ContextTypes.DEFAULT_
             parse_mode="Markdown"
         )
     else:
-        # Regular /start command in DM - show verification instructions
-        await update.message.reply_text(
-            "👋 Hello! I'm Biggie The American Bully (Top Dog Check), The Top Dog verifier! 🐕\n\n"
-            "I help private groups verify token ownership for their members.\n\n"
-            "To verify your tokens and join a private group, you need a verification link from the group admin.\n\n"
-            "📋 *How it works:*\n"
-            "1. Get a verification link from the group admin\n"
-            "2. Click the link to start this verification process\n"
-            "3. Provide your Ethereum wallet address\n"
-            "4. I'll check if you meet the token requirements\n"
-            "5. If verified, you'll receive an invite link\n\n"
-            "🔒 *Your wallet address is only used for verification and is not stored long-term.*",
-            parse_mode="Markdown"
-        )
+        # Regular /start command in DM
+        if is_owner(user_id):
+            await update.message.reply_text(
+                "👑 Hello Owner! You are permanently whitelisted in all groups. "
+                "Click a verification link to get an invite directly."
+            )
+        else:
+            await update.message.reply_text(
+                "👋 Hello! I'm Biggie The American Bully (Top Dog Check), The Top Dog verifier! 🐕\n\n"
+                "I help private groups verify token ownership for their members.\n\n"
+                "To verify your tokens and join a private group, you need a verification link from the group admin.\n\n"
+                "📋 *How it works:*\n"
+                "1. Get a verification link from the group admin\n"
+                "2. Click the link to start this verification process\n"
+                "3. Provide your Ethereum wallet address\n"
+                "4. I'll check if you meet the token requirements\n"
+                "5. If verified, you'll receive an invite link\n\n"
+                "🔒 *Your wallet address is only used for verification and is not stored long-term.*",
+                parse_mode="Markdown"
+            )
 
 async def handle_group_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command in groups."""
