@@ -16,6 +16,8 @@ from verification import (
     CONFIG_PATH, USER_DATA_PATH, get_token_from_env
 )
 
+GROUP_NAMES = {}
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -32,13 +34,14 @@ if not TOKEN:
 async def verify_all_members(bot: Bot, group_id: str, group_config: Dict[str, Any]):
     """Verify all existing group members against token requirements."""
     try:
-        logger.info(f"🔄 Starting periodic verification for group {group_id}")
+        group_name = await get_group_name(bot, int(group_id))
+        logger.info(f"🔄 Starting periodic verification for group {group_id} ({group_name})")
         logger.info(f"📊 Using config: min_balance={group_config.get('min_balance')}, token={group_config.get('token')}")
 
         user_data = load_json_file(USER_DATA_PATH)
         group_users = user_data.get(group_id, {})
 
-        logger.info(f"Found {len(group_users)} users to verify in group {group_id}")
+        logger.info(f"Found {len(group_users)} users to verify in group {group_id} ({group_name})")
 
         verified_count = 0
         removed_count = 0
@@ -100,13 +103,25 @@ async def periodic_verification():
     bot = Bot(token=TOKEN)
 
     for group_id, group_config in config.items():
-        logger.info(f"Verifying members in group {group_id}")
+        group_name = await get_group_name(bot, int(group_id))
+        logger.info(f"Verifying members in group {group_id} ({group_name})")
         # Reload config for each group to ensure fresh data
         fresh_config = load_json_file(CONFIG_PATH)
         fresh_group_config = fresh_config.get(group_id, group_config)
         await verify_all_members(bot, group_id, fresh_group_config)
 
     logger.info("✅ Periodic verification cycle completed")
+
+async def get_group_name(bot: Bot, group_id: int) -> str:
+    if group_id in GROUP_NAMES:
+        return GROUP_NAMES[group_id]
+    try:
+        chat = await bot.get_chat(group_id)
+        GROUP_NAMES[group_id] = chat.title or str(group_id)
+        return GROUP_NAMES[group_id]
+    except Exception as e:
+        logger.error(f"Error fetching group name for {group_id}: {e}")
+        return str(group_id)
 
 async def main():
     """Main function for cron job."""
