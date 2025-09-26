@@ -883,9 +883,11 @@ async def handle_dm_start_command(update: Update, context: ContextTypes.DEFAULT_
                 member = await context.bot.get_chat_member(chat_id=group_id, user_id=user_id)
                 if member.status in ["member", "administrator", "creator"]:
                     # User is still inside the group
+                    chat = await context.bot.get_chat(group_id)
                     await update.message.reply_text(
-                        f"✅ You are already verified for group `{group_id}`.\n"
-                        "No need to verify again unless the group admin resets your access."
+                        f"✅ You are already verified for *{chat.title}*.\n"
+                        "You are also still in the group, so nothing to do here unless admin resets the bot.",
+                        parse_mode="Markdown"
                     )
                     return
                 else:
