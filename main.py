@@ -127,6 +127,9 @@ if not MORALIS_API_KEY:
 VERIFICATION_LINKS_PATH = os.path.join(DATA_DIR, "verification_links.json")
 VERIFICATION_INTERVAL = 23000  # Checks every 16.6 minutes
 
+# railway logging group info enhanced
+GROUP_NAMES = {}
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -1428,7 +1431,8 @@ async def verify_all_members(bot, group_id: str, group_config: Dict[str, Any]):
         user_data = load_json_file(USER_DATA_PATH)
         group_users = user_data.get(group_id, {})
         
-        logger.info(f"Found {len(group_users)} users to verify in group {group_id}")
+        group_name = await get_group_name(context, int(group_id))
+        logger.info(f"Found {len(users)} users to verify in group {group_id} ({group_name})")
         
         verified_count = 0
         removed_count = 0
@@ -1875,6 +1879,20 @@ async def dump(update, context):
         f"USER_DATA.json:\n{json.dumps(user_data, indent=2)[:2000]}"
     )
     await update.message.reply_text(f"```\n{text}\n```", parse_mode="Markdown")
+
+# ---------------------------------------------
+# Main - railway enhanced group info logging
+# ---------------------------------------------
+
+async def get_group_name(context, group_id: int) -> str:
+    if group_id in GROUP_NAMES:
+        return GROUP_NAMES[group_id]
+    try:
+        chat = await context.bot.get_chat(group_id)
+        GROUP_NAMES[group_id] = chat.title or str(group_id)
+        return GROUP_NAMES[group_id]
+    except Exception:
+        return str(group_id)
 
 # ---------------------------------------------
 # Main - FIXED HANDLER REGISTRATION
