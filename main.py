@@ -1681,14 +1681,24 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # ✅ Step 2: Owner bypass whitelist, else check group whitelist
-    if not is_owner(user_id) and not is_group_whitelisted(group_id):
-        await update.message.reply_text(
-            "🔄 Your group is pending whitelist approval.\n\n"
-            "You've been added to the queue. DM @rain5966 and send 0.1 ETH to "
-            "0x0000000137cd3F00dd6304B7af378fD2EEf73d37.\n"
-            "You'll receive a notification when your group is approved."
-        )
-        return
+    if not is_owner(user_id):
+        if not is_group_whitelisted(group_id):
+            # Distinguish between never requested vs pending
+            whitelist_data = load_json_file(WHITELIST_PATH)
+            if group_id not in whitelist_data:
+                await update.message.reply_text(
+                    "❌ This group has never been whitelisted.\n\n"
+                    "Run /setup to request whitelist approval from the owner."
+                )
+                return
+
+            await update.message.reply_text(
+                "⏳ Your group is pending whitelist approval.\n\n"
+                "You've been added to the queue. DM @rain5966 and send 0.1 ETH to "
+                "0x0000000137cd3F00dd6304B7af378fD2EEf73d37.\n"
+                "You'll receive a notification when your group is approved."
+            )
+            return
 
     # ✅ Step 3: Show current settings (if configured)
     config = load_json_file(CONFIG_PATH)
