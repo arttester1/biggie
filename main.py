@@ -248,11 +248,11 @@ async def check_token_transfer_moralis(verifier_address, user_address, token_add
         decimals = int(token_metadata[0].get("decimals", 18))
         logger.info(f"Token {token_address} has decimals: {decimals}")
 
-        # Get transfers from user to verifier within last 5000 blocks
+        # Get transfers from user to verifier within last 800 blocks
         params = {
             "address": user_address,
             "chain": moralis_chain,
-            "from_block": max(0, current_block - 5000),
+            "from_block": max(0, current_block - 800),
             "to_block": current_block,
             "contract_addresses": [token_address],
             "to_address": verifier_address,
@@ -1049,8 +1049,6 @@ async def handle_verification_button(update: Update, context: ContextTypes.DEFAU
 
         # Timeout tracking: respect first_fail_time if set
         timeout_seconds = 300  # 5 minutes max
-        if "first_fail_time" not in user_session:
-            user_session["first_fail_time"] = now
         elapsed = now - user_session["first_fail_time"]
 
         if elapsed > timeout_seconds:
@@ -1233,7 +1231,12 @@ async def handle_dm_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif session["step"] == "awaiting_transfer" and message_text.lower() == "done":
         # User claims they sent the token, now verify the transaction
         verifying_msg = await update.message.reply_text("🔍 Verifying your token transfer...")
-
+        
+        # Start session timer immediately on "done"
+        now = int(time.time())
+        if "first_fail_time" not in session:
+            session["first_fail_time"] = now
+        
         config = load_json_file(CONFIG_PATH)
         group_config = config.get(session["group_id"])
 
