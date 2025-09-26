@@ -879,12 +879,34 @@ async def handle_dm_start_command(update: Update, context: ContextTypes.DEFAULT_
             and str(user_id) in user_data[group_id]
             and user_data[group_id][str(user_id)].get("verified", False)
         ):
-            await update.message.reply_text(
-                f"✅ You are already verified for group `{group_id}`.\n"
-                "No need to verify again unless the group admin resets your access."
-            )
-            return
-        
+            try:
+                member = await context.bot.get_chat_member(chat_id=group_id, user_id=user_id)
+                if member.status in ["member", "administrator", "creator"]:
+                    # User is still inside the group
+                    await update.message.reply_text(
+                        f"✅ You are already verified for group `{group_id}`.\n"
+                        "No need to verify again unless the group admin resets your access."
+                    )
+                    return
+                else:
+                    # User was verified before, but left the group – give new invite
+                    chat = await context.bot.get_chat(group_id)
+                    invite_link = await chat.create_invite_link(
+                        name=f"Rejoin {user_id}",
+                        member_limit=1,
+                        creates_join_request=False,
+                        expire_date=datetime.utcnow() + timedelta(minutes=10)
+                    )
+                    await update.message.reply_text(
+                        f"🔄 You were previously verified for *{chat.title}*, "
+                        f"but you are not in the group right now.\n\n"
+                        f"Here’s a new invite link:\n[Join Here]({invite_link.invite_link})",
+                        parse_mode="Markdown"
+                    )
+                    return
+            except Exception as e:
+                logger.error(f"Error checking membership for {user_id} in {group_id}: {e}")
+   
         # Store verification session
         verification_sessions[(user_id, group_id)] = {
             "group_id": group_id,
