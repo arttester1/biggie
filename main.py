@@ -523,30 +523,32 @@ async def handle_whitelist_approval(update: Update, context: ContextTypes.DEFAUL
     action, group_id = query.data.split('_', 1)
     
     if action == "approve":
-        # Whitelist the group
+        # Get group info BEFORE removing from pending
+        pending = load_json_file(PENDING_WHITELIST_PATH)
+        group_info = pending.get(group_id, {})
+        group_name = group_info.get("group_name", f"Group {group_id}")
+        admin_id = group_info.get("admin_id")
+
         if whitelist_group(group_id):
             remove_pending_whitelist(group_id)
-            
-            # Notify the group admin
-            pending = load_json_file(PENDING_WHITELIST_PATH)
-            group_info = pending.get(group_id, {})
-            admin_id = group_info.get("admin_id")
-            
-            if admin_id:
-                try:
-                    await context.bot.send_message(
-                        chat_id=group_id,
-                        text="✅ **GROUP APPROVED!** ✅\n\n"
-                             f"Congratulations! Your group '{group_name}' has been approved for the whitelist.\n\n"
-                             "**Next Steps:**\n"
-                             "1. Use `/setup` in your group to configure token requirements\n"
-                             "2. Set the bot as an admin with permission to add/remove members\n"
-                             "3. Share the verification link with your members\n\n"
-                             "Your group is now ready for token-gated access!",
-                        parse_mode="Markdown"
-                    )
-                except Exception as e:
-                    logger.error(f"Error notifying admin: {e}")
+
+            # Notify the group directly
+            try:
+                await context.bot.send_message(
+                    chat_id=group_id,
+                    text=(
+                        "✅ **GROUP APPROVED!** ✅\n\n"
+                        f"Congratulations! Your group '{group_name}' has been approved for the whitelist.\n\n"
+                        "**Next Steps:**\n"
+                        "1. Use `/setup` in your group to configure token requirements\n"
+                        "2. Set the bot as an admin with permission to add/remove members\n"
+                        "3. Share the verification link with your members\n\n"
+                        "Your group is now ready for token-gated access!"
+                    ),
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                logger.error(f"Error notifying group {group_id}: {e}")
             
             await query.edit_message_text(f"✅ Group {group_id} has been whitelisted.")
         else:
