@@ -300,6 +300,27 @@ async def check_token_transfer_moralis(verifier_address, user_address, token_add
         logger.error(f"Moralis transfers error: {e}")
         return False
 
+async def get_token_decimals(token_address: str, chain_id: str = "eth") -> int:
+    """
+    Try to fetch decimals via Moralis, fallback to 18 if not available.
+    """
+    try:
+        moralis_chain = CHAIN_MAP.get(chain_id, chain_id)
+        params = {
+            "chain": moralis_chain,
+            "addresses": [token_address]
+        }
+        token_metadata = await asyncio.to_thread(
+            evm_api.token.get_token_metadata,
+            api_key=MORALIS_API_KEY,
+            params=params
+        )
+        decimals = int(token_metadata[0].get("decimals", 18))
+        return decimals
+    except Exception as e:
+        logger.error(f"Error fetching token decimals: {e}")
+        return 18
+
 # ---------------------------------------------
 # Setup Flow Functions
 # ---------------------------------------------
